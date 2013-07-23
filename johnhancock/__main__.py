@@ -5,6 +5,23 @@ from StringIO import StringIO
 from pyPdf import PdfFileWriter, PdfFileReader
 from reportlab.pdfgen.canvas import Canvas
 
+class Watermark(object):
+
+    def __init__(self):
+        self.canvas = Canvas('watermark.pdf', pagesize=(612, 792))
+
+    def sign(self, x, y, phrases=(), dx=0):
+        c = self.canvas
+        c.drawImage('../signature.png', x=x, y=y, width=120, height=100,
+                    mask='auto', preserveAspectRatio=True, anchor='sw')
+        for phrase in phrases:
+            y -= 14
+            c.drawString(x + 20 + dx, y, phrase)
+
+    def page(self):
+        self.canvas.showPage()
+        return PdfFileReader(StringIO(self.canvas.getpdfdata())).getPage(0)
+
 def main():
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('pdfpath', metavar='PDF-file', help='PDF file to sign')
@@ -12,34 +29,21 @@ def main():
 
     args = parser.parse_args()
 
-    # Draw the signature and date on a watermark page.
-
-    # from reportlab.lib.utils import ImageReader
-
-    canvas = Canvas('watermark.pdf')
-    canvas.drawImage('../signature.png', x=134, y=124, width=160, height=160,
-                     mask='auto', preserveAspectRatio=True, anchor='sw')
-    canvas.drawString(380, 130, 'October 26, 2012')
-    canvas.showPage()
-    rendering = PdfFileReader(StringIO(canvas.getpdfdata()))
-    watermark = rendering.getPage(0)
-
     # Produce the PDF, overlaying the signature where directed.
 
     document = PdfFileReader(open(args.pdfpath, 'rb'))
     output = PdfFileWriter()
 
-    #print dir(document)
-    for page in (document.pages[-1], ):
-        page.mergePage(watermark)
-        output.addPage(page)
+    pages = document.pages
 
-    # pdfdata = StringIO()
-    # output.write(pdfdata)
+    w = Watermark()
+    w.sign(150, 264.5, []) #['Brandon C Rhodes'])
+    w.canvas.drawString(432, 268, '22 July 2013')
+    pages[0].mergePage(w.page())
+
+    output.addPage(pages[0])
 
     output.write(open('signed-document.pdf', 'wb'))
 
-    # return HttpResponse(pdfdata.getvalue(), content_type='application/pdf')
-    # print args
-
-main()
+if __name__ == '__main__':
+    main()
