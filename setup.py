@@ -8,5 +8,5 @@ setup(
     author_email='brandon@rhodesmill.org',
     #url='',
     packages=['johnhancock'],
-    install_requires=['PIL', 'pyPdf', 'reportlab'],
+    install_requires=['Pillow', 'pyPdf', 'reportlab'],
     )
